@@ -1,7 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="31820c57-505a-44b4-9dff-03ae9fcd495d" name="Default" comment="" />
+    <list default="true" id="31820c57-505a-44b4-9dff-03ae9fcd495d" name="Default" comment="">
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
+      <change type="MOVED" beforePath="$PROJECT_DIR$/documentation_v1" afterPath="$PROJECT_DIR$/documentation_part_1" />
+    </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="TRACKING_ENABLED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -15,35 +18,47 @@
   <component name="ExecutionTargetManager" SELECTED_TARGET="default_target" />
   <component name="FileEditorManager">
     <leaf>
-      <file leaf-file-name="documentation_v1" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/documentation_v1">
+      <file leaf-file-name="two_schedule.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/src/part_2/two_schedule.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="228">
-              <caret line="60" column="13" lean-forward="false" selection-start-line="60" selection-start-column="13" selection-end-line="60" selection-end-column="13" />
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="single_thread.py" pinned="false" current-in-tab="true">
-        <entry file="file://$PROJECT_DIR$/src/part_I/single_thread.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="418">
-              <caret line="22" column="22" lean-forward="false" selection-start-line="22" selection-start-column="22" selection-end-line="22" selection-end-column="22" />
+            <state relative-caret-position="183">
+              <caret line="41" column="0" lean-forward="false" selection-start-line="41" selection-start-column="0" selection-end-line="41" selection-end-column="0" />
               <folding>
-                <element signature="e#147#175#0" expanded="true" />
+                <element signature="e#146#160#0" expanded="true" />
               </folding>
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="multi_thread.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/src/part_I/multi_thread.py">
+      <file leaf-file-name="three_schedule.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/src/part_2/three_schedule.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="114">
-              <caret line="33" column="10" lean-forward="false" selection-start-line="33" selection-start-column="10" selection-end-line="33" selection-end-column="10" />
+            <state relative-caret-position="240">
+              <caret line="41" column="56" lean-forward="false" selection-start-line="41" selection-start-column="56" selection-end-line="41" selection-end-column="56" />
               <folding>
-                <element signature="e#146#174#0" expanded="true" />
+                <element signature="e#148#162#0" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="documentation_part_2" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/documentation_part_2">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="268">
+              <caret line="109" column="27" lean-forward="false" selection-start-line="109" selection-start-column="18" selection-end-line="109" selection-end-column="27" />
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="not_await.py" pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/src/part_2/not_await.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="88">
+              <caret line="31" column="0" lean-forward="true" selection-start-line="31" selection-start-column="0" selection-end-line="31" selection-end-column="0" />
+              <folding>
+                <element signature="e#143#157#0" expanded="true" />
               </folding>
             </state>
           </provider>
@@ -67,6 +82,11 @@
         <option value="$PROJECT_DIR$/src/part_I/multi_thread.py" />
         <option value="$PROJECT_DIR$/documentation_v1" />
         <option value="$PROJECT_DIR$/src/part_I/single_thread.py" />
+        <option value="$PROJECT_DIR$/src/documentation_part_2" />
+        <option value="$PROJECT_DIR$/src/part_2/two_schedule.py" />
+        <option value="$PROJECT_DIR$/src/part_2/three_schedule.py" />
+        <option value="$PROJECT_DIR$/documentation_part_2" />
+        <option value="$PROJECT_DIR$/src/part_2/not_await.py" />
       </list>
     </option>
   </component>
@@ -77,10 +97,10 @@
     <sorting>DEFINITION_ORDER</sorting>
   </component>
   <component name="ProjectFrameBounds">
-    <option name="x" value="62" />
-    <option name="y" value="76" />
+    <option name="x" value="4" />
+    <option name="y" value="162" />
     <option name="width" value="1382" />
-    <option name="height" value="475" />
+    <option name="height" value="466" />
   </component>
   <component name="ProjectView">
     <navigator currentView="ProjectPane" proportions="" version="1">
@@ -124,24 +144,6 @@
               <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
             </PATH_ELEMENT>
           </PATH>
-          <PATH>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="crazy_schedule" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="crazy_schedule" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="src" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="part_I" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
-            </PATH_ELEMENT>
-          </PATH>
         </subPane>
       </pane>
       <pane id="Scope" />
@@ -151,6 +153,11 @@
     <property name="settings.editor.selected.configurable" value="com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable" />
     <property name="WebServerToolWindowFactoryState" value="false" />
     <property name="last_opened_file_path" value="$PROJECT_DIR$" />
+  </component>
+  <component name="RecentsManager">
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="D:\crazy_schedule" />
+    </key>
   </component>
   <component name="RunDashboard">
     <option name="ruleStates">
@@ -349,10 +356,10 @@
     <servers />
   </component>
   <component name="ToolWindowManager">
-    <frame x="62" y="76" width="1382" height="475" extended-state="0" />
+    <frame x="4" y="162" width="1382" height="466" extended-state="1" />
     <editor active="true" />
     <layout>
-      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.120272316" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
+      <window_info id="Project" active="true" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.16792738" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
       <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="-1" side_tool="true" content_ui="tabs" />
       <window_info id="Database" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="-1" side_tool="false" content_ui="tabs" />
@@ -395,17 +402,7 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/part_I/multi_thread.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="114">
-          <caret line="33" column="10" lean-forward="false" selection-start-line="33" selection-start-column="10" selection-end-line="33" selection-end-column="10" />
-          <folding>
-            <element signature="e#146#174#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/documentation_v1">
+    <entry file="file://$PROJECT_DIR$/documentation_part_1">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="228">
           <caret line="60" column="13" lean-forward="false" selection-start-line="60" selection-start-column="13" selection-end-line="60" selection-end-column="13" />
@@ -419,6 +416,54 @@
           <caret line="22" column="22" lean-forward="false" selection-start-line="22" selection-start-column="22" selection-end-line="22" selection-end-column="22" />
           <folding>
             <element signature="e#147#175#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/part_I/multi_thread.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="164">
+          <caret line="33" column="10" lean-forward="false" selection-start-line="33" selection-start-column="10" selection-end-line="33" selection-end-column="10" />
+          <folding>
+            <element signature="e#146#174#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/part_2/two_schedule.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="183">
+          <caret line="41" column="0" lean-forward="false" selection-start-line="41" selection-start-column="0" selection-end-line="41" selection-end-column="0" />
+          <folding>
+            <element signature="e#146#160#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/part_2/three_schedule.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="240">
+          <caret line="41" column="56" lean-forward="false" selection-start-line="41" selection-start-column="56" selection-end-line="41" selection-end-column="56" />
+          <folding>
+            <element signature="e#148#162#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/documentation_part_2">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="268">
+          <caret line="109" column="27" lean-forward="false" selection-start-line="109" selection-start-column="18" selection-end-line="109" selection-end-column="27" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/part_2/not_await.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="88">
+          <caret line="31" column="0" lean-forward="true" selection-start-line="31" selection-start-column="0" selection-end-line="31" selection-end-column="0" />
+          <folding>
+            <element signature="e#143#157#0" expanded="true" />
           </folding>
         </state>
       </provider>
