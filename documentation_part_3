@@ -1,0 +1,391 @@
+协程具有的两大特点：
+    1.可以保存运行时候的状态数据
+    2.可以让出自己的执行权，当重新获得执行权限时从上一次暂停的位置继续执行
+
+与函数相比，协程是可以被打断以及恢复执行流程的。可以理解协程为用户级线程。
+内核级线程的调度执行都是由操作系统来负责的，但协程的调度执行是由线程自己负责的。
+注意：正常情况下，同一个进程的线程之间是可以并行的(py的多线程除外)，但无论如何，同一线程内部
+的各个协程不是并行的，只能并发执行。
+
+协程的调度执行需要线程负责，则需要实现一个调度器来实现协程的调度，在 asyncio 中eventloop 是其协程调度器，
+各个协程需要 register 到 调度器。
+
+事件(任务)调度
+1.事件循环(eventloop)
+2.事件在事件循环中的注册及发生事件时的回调函数绑定
+
+asyncio 协程调度
+基于事件调度实现，asyncio 中的事件分为IO事件(主要是用于socket文件描述符事件的监控)和定时任务
+
+一个协程的执行流程被打断了，是通过回调函数来恢复其调度的
+
+
+#一个协程执行流程被打断的最主要的原因就是在协程内部调用了另一个协程函数
+import asyncio
+import asyncio.coroutines
+
+def _set_result_unless_cancelled(fut, result):
+    if fut.cancelled():
+        return
+    print("this is a rewrited sleep callback function")
+    fut.set_result(result)
+
+# asyncio.sleep() 函数的实现版本
+
+@asyncio.coroutine
+def dalong_sleep(delay, result=None, *, loop=None):
+    """Coroutine that completes after a given time (in seconds)."""
+    if delay == 0:
+        yield
+        return result
+
+    future = loop.create_future()
+    h = future._loop.call_later(delay,
+                                _set_result_unless_cancelled,
+                                future, result)
+    try:
+        return (yield from future)
+    finally:
+        h.cancel()
+
+async def cor1():
+    await dalong_sleep(1, loop = event_loop)
+    print("this coroutine cor1")
+
+def call_back(res):
+    print("this is cor1's callback fucntion")
+
+# 获得一个事件循环
+event_loop = asyncio.get_event_loop()
+# 创建一个任务，并将任务加入事件循环
+task = event_loop.create_task(cor1())
+# 给任务添加回调函数
+task.add_done_callback(call_back)
+# 开始执行任务直到结束
+event_loop.run_until_complete(task)
+
+1.TimeHandler
+
+class TimerHandle(Handle):
+   # 需要指明发生时间when 以及时间到达后执行的 回调函数callback
+    def __init__(self, when, callback, args, loop, context=None):
+        # 必须指明预定时间
+        assert when is not None
+        super().__init__(callback, args, loop, context)
+        if self._source_traceback:
+            del self._source_traceback[-1]
+        self._when = when
+        self._scheduled = False
+   # 执行回调函数
+   def _run(self):
+        try:
+            self._context.run(self._callback, *self._args)
+        except (SystemExit, KeyboardInterrupt)
+            # pass
+        self = None  # Needed to break cycles when an exception occurs.
+
+TimeHandler 是时间事件的句柄，实际是时间事件上面封装了一层，支持指定事件发生的时间。
+实例化一个TimeHandler时，需要指明该事件指定的发生时间以及该事件的回调函数。
+当执行一个TimeHandler对象的_run()方法时，执行该时间事件的回调函数。
+
+2.Eventloop
+每一次事件循环都会执行_run_once()函数，
+asyncio 中所有就绪的任务/事件 都放在self._ready 中。
+所有待发生的时间事件都放在self._scheduled 中进行存储管理，其中self._scheduled 是一个按
+照时间事件的发生时间来构成的最小堆。
+
+class BaseEventLoop(events.AbstractEventLoop):
+    def _run_once(self):
+            timeout = None
+            # 如果就绪队列已经有任务了，则跳过IO事件的获取
+            if self._ready or self._stopping:
+                timeout = 0
+            # 否则检查即将最早发生的定时事件发生时间，并根据发生时间决定IO事件等待的时长
+            elif self._scheduled:
+                # self._scheduled是一个最小堆
+                when = self._scheduled[0]._when
+                timeout = min(max(0, when - self.time()), MAXIMUM_SELECT_TIMEOUT)
+
+            # 获取发生的IO事件，底层可采用epoll，poll或者select系统调用
+            event_list = self._selector.select(timeout)
+
+            # 处理所有的IO事件
+            self._process_events(event_list)
+
+            # 获取所有该发生的定时事件
+            end_time = self.time() + self._clock_resolution
+            while self._scheduled:
+                handle = self._scheduled[0]
+                if handle._when >= end_time:
+                    break
+                handle = heapq.heappop(self._scheduled)
+                handle._scheduled = False
+                self._ready.append(handle)
+
+            # 运行就绪队列中的所有任务
+            ntodo = len(self._ready)
+            for i in range(ntodo):
+                handle = self._ready.popleft()
+                handle._run()
+
+     # 将定时任务加入到schduled队列中
+    def call_later(self, delay, callback, *args, context=None):
+
+        timer = self.call_at(self.time() + delay, callback, *args,
+                             context=context)
+        return timer
+
+     # 将定时任务加入到schduled队列中
+    def call_at(self, when, callback, *args, context=None):
+        timer = events.TimerHandle(when, callback, args, self, context)
+        heapq.heappush(self._scheduled, timer)
+        timer._scheduled = True
+        return timer
+    # 将定时任务直接加入到ready队列中，下一次执行run_once函数时被执行
+    def call_soon(self, callback, *args, context=None):
+        handle = self._call_soon(callback, args, context)
+        return handle
+
+    def _call_soon(self, callback, args, context):
+        handle = events.Handle(callback, args, self, context)
+        self._ready.append(handle)
+        return handle
+
+每个任务加入到事件循环中时候，会实例化一个对应的TimeHandler对象，ready 和 scheduled 中存储的就是一个个
+TimeHandler对象。为方便用户指定TimeHandler中的when参数，enentloop 提供三个接口让用户把时间事件加入
+到事件循环中，分别是 call_later()、call_at()、call_soon() 其中call_soon()是直接将回调函数加到
+ready队列中，下次执行run_once 函数时候，该回调会被执行，而call_later 和 call_soon 将定时任务加到
+schduled中。
+asyncio中的eventloop会循环执行run_once函数，run_once 函数的执行逻辑为：
+
+1.检查ready 队列中是否有任务，如果ready队列中已经有任务，则设置timeout为0，不获取IO事件，然后获取所有
+预计发生时间小于当前时间的时间事件加入到ready队列中，并执行ready队列中的事件。
+2.如果ready队列中没有任务，就根据最早发生的时间事件的时间与当前的时间的比较结果来确定
+self.scelector.select() 函数的超时时间。如果获取到了IO事件，则首先进行IO事件处理，然后获取该发生的
+时间事件加入到ready队列中，最后执行所有的ready队列中的任务。
+
+3.Task
+Task 是协程调度的核心实现，所有的协程都是一个Task，对协程的执行、挂起、恢复执行等都在Task中进行。
+class Task(futures._PyFuture):
+    """A coroutine wrapped in a Future."""
+
+    def __init__(self, coro, *, loop=None, name=None):
+        super().__init__(loop=loop)
+        # Task必须用协程作为参数进行实例化
+        if not coroutines.iscoroutine(coro):
+            raise TypeError(f"a coroutine was expected, got {coro!r}")
+
+        # 设置一些类的属性
+        self._must_cancel = False
+        self._fut_waiter = None
+        self._coro = coro
+        self._context = contextvars.copy_context()
+        # 将Task 执行函数加入到事件循环的ready队列中
+        self._loop.call_soon(self.__step, context=self._context)
+
+    def __step(self, exc=None):
+        coro = self._coro
+        self._fut_waiter = None
+        try:
+	    # 通过执行协程的send方法
+            result = coro.send(None)
+        except StopIteration as exc:
+		# 协程执行完毕会raise一个StopIteration的异常
+		# 如果执行协程执行完毕，则将设置执行的结果
+                super().set_result(exc.value)
+        else:
+	    # 执行到这一步说明协程中使用了await/yield/yield from
+	    # 否则协程是不会被打断的，会直接执行完
+            blocking = getattr(result, '_asyncio_future_blocking', None)
+	    # 如果blocking不是None，说明result不是None，此时说明
+            if blocking is not None:
+		# 说明此时使用了await和yield from等待另一个线程
+		# 否则result不会由_asyncio_future_blocking属性
+                if blocking:
+	            # 不允许协程await/yield from自己，否则陷入循环await了
+                    if result is self:
+                        new_exc = RuntimeError(
+                            f'Task cannot await on itself: {self!r}')
+                        self._loop.call_soon(
+                            self.__step, new_exc, context=self._context)
+		    # await/yield from了别的协程函数
+                    else:
+                        result._asyncio_future_blocking = False
+			# 把当前协程的_wakeup函数设置为等待协程的回调函数
+                        result.add_done_callback(
+                            self.__wakeup, context=self._context)
+                        self._fut_waiter = result
+
+
+            elif result is None:
+                # 当该协程函数中出现一行语句：yield，这时相当于放弃一次执行权
+		# 然后再把step函数加入到ready队列中
+                self._loop.call_soon(self.__step, context=self._context)
+
+
+    def __wakeup(self, future):
+        #再次执行__step函数
+        self.__step()
+    """
+    如下的方法都是Future类中的方法，由于Task继承Future类
+    """
+    def add_done_callback(self, fn, *, context=None):
+	# 将回调函数加入到回调函数列表中
+        if context is None:
+            context = contextvars.copy_context()
+        self._callbacks.append((fn, context))
+
+    def set_result(self, result):
+	# 设置result属性，并调度所有的回调函数
+        self._result = result
+        self._state = _FINISHED
+        self.__schedule_callbacks()
+
+    def __schedule_callbacks(self):
+	# 将所有的回调函数加入到事件循环的ready对列中
+        callbacks = self._callbacks[:]
+        for callback, ctx in callbacks:
+            self._loop.call_soon(callback, self, context=ctx)
+
+在 Task 中完成了一个协程函数的执行、挂起、切换、结束之后调用其回调函数。
+对于一个 Task 重要的一点在于可以对其加入回调幻术，即该Task的协程运行结束后，会调度执行所有的回调函数。
+
+分析一下上述的流程：
+1.__init__()
+使用协程创建一个Task，我们命名为Task1，同时在__init__函数的最后，将Task1的__step()函数加入了事件循环的就绪队列中，
+下一次执行run_once函数时，这个_step函数就会被执行。
+2._step()
+实际上为一个Task的执行函数, 首先会调用当前协程的send()函数进行当前协程的执行
+3.如果当前协程中没有使用yield/yield from/await，则会顺利的执行完毕（因为不会被打断）。
+协程执行结束时会raise一个stopIteration的异常，__step()中捕获到后，
+就执行Task1的结果设置函数set_result()
+    3.1.set_result(): 在set_result()函数中，设置了result结果，同时执行了所有回调函数（
+    可以对一个Task对象重复调用add_done_callback() 加入多个回调函数，这些回调函数被放置
+    在一个列表中维护）
+    3.2._schedule_callbacks():在回调函数调度中，将回调函数列表中的所有回调函数加入到
+    事件循环的ready队列中，下次run_once函数被运行时，这些回调函数被执行。
+
+4.如果当前协程中使用了yield from或者await等待另一个协程的执行完毕，
+则就把当前Task的唤醒函数_wakeup()加入到被执行协程的回调函数
+
+_wakeup()：当被等待写成执行完毕，执行其回调函数wakeup时，wakeup函数重新执行step函数。
+
+总结Task类
+1.如果一个Task的协程正常执行完，就设置Task的结果属性，然后执行Task的回到函数。
+2.如果该Task的协程由于中间使用了yield/yield from / await 从而被打断了执行流程，则
+将当前Task的协程的唤醒函数作为被调用的协程所属的Task的回调函数。在被调用协程顺利执行完毕后，
+按照情况1的执行流程，当前Task的唤醒函数会被作为回调函数执行，从而又可以继续执行前面的协程。
+
+看一个例子：
+asyncio.sleep 调用
+
+# 一个协程执行流程被打断的最主要的原因就是在协程内部调用了另一个协程函数
+import asyncio
+
+async def cor1():
+    await asyncio.sleep(1)
+    print("this coroutine cor1")
+
+def call_back(res):
+    print("this is cor1's callback fucntion")
+
+# 获得一个事件循环
+event_loop = asyncio.get_event_loop()
+# 创建一个任务，并将任务加入事件循环
+task = event_loop.create_task(cor1())
+# 给任务添加回调函数
+task.add_done_callback(call_back)
+# 开始执行任务直到结束
+event_loop.run_until_complete(task)
+
+按照整个函数的执行流程来简单的分析一下每一步做了哪些工作。
+
+import asyncio
+import asyncio.coroutines
+
+def _set_result_unless_cancelled(fut, result):
+    if fut.cancelled():
+        return
+    print("this is a rewrited sleep callback function")
+    fut.set_result(result)
+
+# asyncio.sleep()函数的实现版本
+
+@asyncio.coroutine
+def dalong_sleep(delay, result=None, *, loop=None):
+    """Coroutine that completes after a given time (in seconds)."""
+    # 如果delay=0， 直接yield
+    if delay == 0:
+        yield
+        return result
+
+    future = loop.create_future()
+    h = future._loop.call_later(delay,
+                                _set_result_unless_cancelled,
+                                future, result)
+    try:
+        # 遇到yield from，则当前协程的执行流程被打断
+        return (yield from future)
+    finally:
+        h.cancel()
+
+async def cor1():
+    # 遇到await 则当前协程执行流程被打断，当前Task的唤醒函数被设置为dalong_sleep的Task的回调函数
+    await dalong_sleep(1, loop = event_loop)
+    print("this coroutine cor1")
+
+def call_back(res):
+    print("this is cor1's callback fucntion")
+
+# 获得一个事件循环
+event_loop = asyncio.get_event_loop()
+# 创建一个任务，并将任务加入事件循环
+task = event_loop.create_task(cor1())
+# 给任务添加回调函数
+task.add_done_callback(call_back)
+# 开始执行任务直到结束
+event_loop.run_until_complete(task)
+
+1.首先通过get_event_loop() 获得一个事件循环 event_loop。
+
+2.使用协程cor1()创建一个Task对象（为方便指代，我们命名为Task1） 在Task1的创建函数的最后，
+Task1的_step函数被加入到事件循环的ready队列中，进而在下一次run_once函数被执行时Task1的协程会被调度执行。
+(asyncio.create_task()就是执行Task实例化，然后返回Task对象，Task对象初始化时最后一步将step函数加入到事件循环的ready队列中
+)
+
+3.对Task1注册一个回调函数call_back()，当Task1执行结束后，在set_result()函数中会将所有的回调函数加入到事件循环的ready队列中。
+
+4.开始执行事件循环，每次事件循环都会执行run_once函数。进入到run_once函数中，首先由于第2步在ready队列中加入了Task的step函数，
+所以开始执行step函数，而step函数会通过协程的send()函数触发cor1()协程的执行。
+
+5.cor1()函数中遇到await，于是将cor1对应的Task1的wakeup函数加入到dalong_sleep()协程对应的Task的回调函数中
+（将dalong_sleep()对应的Task命名为Task2。）
+
+6.如果调用dalong_sleep时delay参数为0。
+    6.1.则dalong_sleep中直接调用yield，dalong_sleep执行流程被打断，但按照step函数中的逻辑，由于Task2并没有等待任何其他的协程执行完毕，
+    所以Task2的step函数会被重新加入到事件循环的ready队列中，然后再下一次run_once函数被执行时再次执行Task2的step函数。
+
+    6.2.当dalong_sleep协程被再次继续执行时，就从yield的下一句开始执行，由于紧接着就是return语句，所以协程执行完毕正常退出并执行其set_result函数。
+    在该函数中设置结果并执行回调函数即Task1的wakeup函数，于是Task1被继续执行。
+
+    6.3.Task1的step函数被继续执行，在step函数中使用send()恢复cor1协程的执行流程。由于后续没有遇到任何的yield/await/yield from，
+    所以协程顺利执行到结束。cor1结束时，调用Task1的set_result函数，设置result属性并将其回调函数加入到事件循环的ready队列中。
+    在下一次的run_once函数被执行时，其回调函数被执行。
+
+7.如果delay不为0。
+    7.1dalong_sleep中首先创建一个future对象（不影响理解，可以近似认为就是创建了一个Task对象，我们将之命名为Task3虽然实现上Future为Task的父类）
+    。指定其发生的时间为delay时长之后的时间戳，然后将其加入到事件循环的schedule堆中，并绑定回调函数为_set_result_unless_cancelled，
+    在该时间事件发生后该回调函数被执行。
+    7.2.继续向下执行遇到yield from等待Task3，按照协程的切换执行流程。会将Task2的唤醒函数wakeup注册为Task3的回调函数。此时Task3有两个回调函数，
+    一个是set_result_unless_cancelled，一个是Task2的唤醒函数。
+    7.3.当睡眠的时间到达后，在run_once函数中就会执行Task3的回调函数。执行Task2的唤醒函数之后，Task2可以被继续执行。
+    7.4.Task2遇到dalong_sleep协程中的return语句，故Task2执行结束，调用其set_result函数并将其回调函数加入到事件循环的ready队列中，
+    Task2的其中一个回调函数就是Task1的唤醒函数
+    7.5.Task1被唤醒之后被继续执行到结束。然后将其回调函数加入到ready队列中Task1的回调函数被执行。
+
+总结：
+  本篇主要介绍了python 中 asyncio 中协程的调度的底层实现。asyncio 事件循环 由run_once完成。
+  在协程的调度执行中，需要关注协程被打断执行流之后如何恢复执行。在asyncio中是借助Task类 通过将当前协程
+  所对应的Task的唤醒函数设置为被调用协程的回调函数从而实现了协程的切换、挂起、唤醒。
+
+具体代码实现 请参看 part_3/three_schedule.py
